@@ -1,6 +1,6 @@
 # RUNTIME/OS
 
-FROM python:3.10
+FROM python:3.10 as streamlit_img
 
 #Expose port you want your app on
 EXPOSE 8080
