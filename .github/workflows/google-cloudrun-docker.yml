@@ -46,7 +46,7 @@ name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "exp/gcr-docker-deploy-gha" ]
 
 env:
   PROJECT_ID: 'nhl-dashboard-stats' # TODO: update Google Cloud project id
