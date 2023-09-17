@@ -1,4 +1,40 @@
-# This workflow build and push a Docker container to Google Artifact Registry and deploy it on Cloud Run when a commit is pushed to the "main" branch
+#### Deploying a streamlit docker container onto Google Cloud Run
+
+Steps to deploying to cloud run
+1. Configure GCP resources
+  - Enable APIs for the project
+      - Cloud Run API
+      - Artifact Registry
+  - Configure Workload Identity Federation for GitHub
+    1. Go to **Workload Identity Pools**
+    2. **Create Pool** --> Name= your_pool_name; Provider name = your_provider_name (e.g. github_actions); Issuer URL=https://token.actions.githubusercontent.com;  google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository
+    3. Create service account with these roles: 
+      - Artifact Registry Reader
+      - Artifact Registry Writer
+      - Cloud Run Developer
+      - Cloud Run Service Agent
+      - Service Account User
+    4. Create GitHub secrets for WIF_PROVIDER and WIF_SERVICE_ACCOUNT
+    - provider = projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+    - service account = my-service-account@my-project.iam.gserviceaccount.com
+  - Create resources:
+    - Artifact Registry Repository
+    - Cloud Run Service
+
+2. Create GitHub Workflow (Either following documentation or using template)
+  - Change the on: push: branch to your feature branch to test before merging onto main
+
+Troubleshooting:
+- Error creating Service: googleapi: Error 403: Permission 'iam.serviceaccounts.actAs' denied on service account (or it may not exist). 
+  - Fix: Add service account user role to service account
+- ... (docker) Image not found 
+  - ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}**/${{ env.SERVICE }}**:${{ github.sha }}
+  - add the name of your image to the repository directory
+  - remember to change all occurances
+
+
+FINAL WORKING GITHUB ACTION WORKFLOW YAML
+```# This workflow build and push a Docker container to Google Artifact Registry and deploy it on Cloud Run when a commit is pushed to the "main" branch
 #
 # Overview:
 #
@@ -46,7 +82,7 @@ name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "exp/gcr-docker-deploy-gha" ]
 
 env:
   PROJECT_ID: 'nhl-dashboard-stats' # TODO: update Google Cloud project id
@@ -110,4 +146,4 @@ jobs:
 
       # If required, use the Cloud Run url output in later steps
       - name: Show Output
-        run: echo ${{ steps.deploy.outputs.url }}
+        run: echo ${{ steps.deploy.outputs.url }}```
