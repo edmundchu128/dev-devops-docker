@@ -1,4 +1,40 @@
-# This workflow build and push a Docker container to Google Artifact Registry and deploy it on Cloud Run when a commit is pushed to the "main" branch
+#### Deploying a streamlit docker container onto Google Cloud Run
+
+Steps to deploying to cloud run
+1. Configure GCP resources
+  - Enable APIs for the project
+      - Cloud Run API
+      - Artifact Registry
+  - Configure Workload Identity Federation for GitHub
+    1. Go to **Workload Identity Pools**
+    2. **Create Pool** --> Name= your_pool_name; Provider name = your_provider_name (e.g. github_actions); Issuer URL=https://token.actions.githubusercontent.com;  google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository
+    3. Create service account with these roles: 
+      - Artifact Registry Reader
+      - Artifact Registry Writer
+      - Cloud Run Developer
+      - Cloud Run Service Agent
+      - Service Account User
+    4. Create GitHub secrets for WIF_PROVIDER and WIF_SERVICE_ACCOUNT
+    - provider = projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+    - service account = my-service-account@my-project.iam.gserviceaccount.com
+  - Create resources:
+    - Artifact Registry Repository
+    - Cloud Run Service
+
+2. Create GitHub Workflow (Either following documentation or using template)
+  - Change the on: push: branch to your feature branch to test before merging onto main
+
+Troubleshooting:
+- Error creating Service: googleapi: Error 403: Permission 'iam.serviceaccounts.actAs' denied on service account (or it may not exist). 
+  - Fix: Add service account user role to service account
+- ... (docker) Image not found 
+  - ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}**/${{ env.SERVICE }}**:${{ github.sha }}
+  - add the name of your image to the repository directory
+  - remember to change all occurances
+
+
+FINAL WORKING GITHUB ACTION WORKFLOW YAML
+```# This workflow build and push a Docker container to Google Artifact Registry and deploy it on Cloud Run when a commit is pushed to the "main" branch
 #
 # Overview:
 #
@@ -46,55 +82,16 @@ name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches: [ "main", "exp/terraform-deploy-resources" ]
-  pull_request:
+    branches: [ "exp/gcr-docker-deploy-gha" ]
 
 env:
   PROJECT_ID: 'nhl-dashboard-stats' # TODO: update Google Cloud project id
   GAR_LOCATION: 'us-central1' # TODO: update Artifact Registry location
-  SERVICE: 'streamlit-dashboard-repo' 
-  IMAGE_NAME: 'streamlit-dashboard-image' 
-  STREAMLIT_DASHBOARD_NAME: 'nhl-dashboard-cr' 
-  
+  SERVICE: 'streamlit-dashboard-container' # TODO: update Cloud Run service name
   REGION: 'us-central1' # TODO: update Cloud Run service region
-  TF_CHDIR: 'terraform' 
 
 jobs:
-  terraform:
-    name: 'Terraform'
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-
-    - name: Terraform init
-      run: terraform -chdir=${{env.TF_CHDIR}} init -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
-      env:
-        GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
-
-    - name: Terraform Format
-      run: terraform -chdir=${{env.TF_CHDIR}} fmt 
-      env:
-        GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
-
-    - name: Terraform Plan
-      run: terraform -chdir=${{env.TF_CHDIR}} plan -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
-      env:
-        GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
-    
-    - name: Terraform Apply
-      run: terraform -chdir=${{env.TF_CHDIR}} apply -auto-approve -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
-      env:
-        GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
-
-
-
   deploy:
-    needs: terraform
     # Add 'id-token' with the intended permissions for workload identity federation
     permissions:
       contents: 'read'
@@ -113,7 +110,15 @@ jobs:
           workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
           service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}' # e.g. - my-service-account@my-project.iam.gserviceaccount.com
 
-   
+      # NOTE: Alternative option - authentication via credentials json
+      # - name: Google Auth
+      #   id: auth
+      #   uses: 'google-github-actions/auth@v0'
+      #   with:
+      #     credentials_json: '${{ secrets.GCP_CREDENTIALS }}''
+
+      # BEGIN - Docker auth and build (NOTE: If you already have a container image, these Docker steps can be omitted)
+
       # Authenticate Docker to Google Cloud Artifact Registry
       - name: Docker Auth
         id: docker-auth
@@ -125,9 +130,8 @@ jobs:
 
       - name: Build and Push Container
         run: |-
-          docker build -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" .
-          docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-
+          docker build -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }}" ./
+          docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }}"
 
       # END - Docker auth and build
 
@@ -135,13 +139,11 @@ jobs:
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v0
         with:
-          service: ${{ env.STREAMLIT_DASHBOARD_NAME }}
+          service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           # NOTE: If using a pre-built image, update the image name here
-
-          image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
+          image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }}
 
       # If required, use the Cloud Run url output in later steps
       - name: Show Output
-        run: echo ${{ steps.deploy.outputs.url }}
+        run: echo ${{ steps.deploy.outputs.url }}```
