@@ -54,7 +54,7 @@ env:
   GAR_LOCATION: 'us-central1' # TODO: update Artifact Registry location
   SERVICE: 'streamlit-dashboard-container' # TODO: update Cloud Run service name
   REGION: 'us-central1' # TODO: update Cloud Run service region
-  TF_CHDIR: 'us-central1' # TODO: update Cloud Run service region
+  TF_CHDIR: '/terraform' # TODO: update Cloud Run service region
 
 jobs:
   terraform:
