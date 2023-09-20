@@ -8,8 +8,8 @@ resource "google_artifact_registry_repository" "artifact-registry-repo" {
 }
 
 # Configuring the repository's permission
-resource "google_artifact_registry_repository_iam_binding" "cloud_function_iam_binding" {
-  repository = google_artifact_registry_repository.artifactory_repository.name
+resource "google_artifact_registry_repository_iam_binding" "gar_sa_iam_binding" {
+  repository = google_artifact_registry_repository.artifact-registry-repo.name
   location   = var.region
   role       = "roles/artifactregistry.writer"
   project    = var.project_id
