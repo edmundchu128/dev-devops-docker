@@ -11,7 +11,7 @@ resource "google_artifact_registry_repository" "artifact-registry-repo" {
 resource "google_artifact_registry_repository_iam_binding" "gar_sa_iam_binding" {
   repository = google_artifact_registry_repository.artifact-registry-repo.name
   location   = var.region
-  role       = "roles/cloudfunctions.serviceAgent"
+  role       = "roles/artifactregistry.writer"
   project    = var.project_id
 
   members = [
