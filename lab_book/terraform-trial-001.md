@@ -19,6 +19,14 @@ Install TF through
 
 ### Configuring the Google Project
 1. Create service account for the google project specific to the GitHub Actions
-Roles needed: Editor (and required permission based on TF config)
-Save the json key into GitHub secrets
+    - Roles needed: Artifact Registry Admin
+    - Save the json key into GitHub secrets
 2. Enable API: Cloud Resource Manager API
+
+3. Create a Google Cloud Storage bucket to serve as TF backend
+    - add config to backend.tf
+    - terraform init requires credentials because it reads the bucket tfstate before plan
+
+### Input variables
+terraform -chdir=${{env.TF_CHDIR}} init -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}'
+
