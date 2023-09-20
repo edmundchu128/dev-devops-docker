@@ -70,12 +70,12 @@ jobs:
       uses: hashicorp/setup-terraform@v1
 
     - name: Terraform init
-      run: terraform -chdir=${{env.TF_CHDIR}} init
+      run: terraform -chdir=${{env.TF_CHDIR}} init -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 
     - name: Terraform Format
-      run: terraform -chdir=${{env.TF_CHDIR}} fmt
+      run: terraform -chdir=${{env.TF_CHDIR}} fmt 
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 
