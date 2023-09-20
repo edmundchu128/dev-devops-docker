@@ -2,7 +2,7 @@
 resource "google_artifact_registry_repository" "artifact-registry-repo" {
   location      = "us-central1"
   project       = var.project_id
-  repository_id = "streamlit-docker-repository"
+  repository_id = var.artifact_reg_repo_service
   description   = "streamlit docker repository"
   format        = "DOCKER"
 }

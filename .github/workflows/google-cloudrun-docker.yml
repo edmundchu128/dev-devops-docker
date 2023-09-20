@@ -52,7 +52,8 @@ on:
 env:
   PROJECT_ID: 'nhl-dashboard-stats' # TODO: update Google Cloud project id
   GAR_LOCATION: 'us-central1' # TODO: update Artifact Registry location
-  SERVICE: 'streamlit-dashboard-container' # TODO: update Cloud Run service name
+  SERVICE: 'streamlit-dashboard-repo' # TODO: update Cloud Run service name
+  IMAGE_NAME: 'streamlit-dashboard-image' # TODO: update Cloud Run service name
   REGION: 'us-central1' # TODO: update Cloud Run service region
   TF_CHDIR: 'terraform' # TODO: update Cloud Run service region
 
@@ -79,12 +80,12 @@ jobs:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 
     - name: Terraform Plan
-      run: terraform -chdir=${{env.TF_CHDIR}} plan 
+      run: terraform -chdir=${{env.TF_CHDIR}} plan -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
     
     - name: Terraform Apply
-      run: terraform -chdir=${{env.TF_CHDIR}} apply -auto-approve
+      run: terraform -chdir=${{env.TF_CHDIR}} apply -auto-approve -var 'artifact_reg_repo_service=${{env.SERVICE}}' -var 'dashboard_image_name=${{env.SERVICE}}' 
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 

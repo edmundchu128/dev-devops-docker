@@ -3,6 +3,14 @@ variable "project_id" {
   default = "nhl-dashboard-stats"
 }
 
+variable "artifact_reg_repo_service" {
+  type    = string
+}
+
+variable "dashboard_image_name" {
+  type    = string
+}
+
 variable "region" {
   type    = string
   default = "us-central1"
