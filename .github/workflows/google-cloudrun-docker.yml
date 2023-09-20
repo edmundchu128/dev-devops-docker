@@ -52,10 +52,12 @@ on:
 env:
   PROJECT_ID: 'nhl-dashboard-stats' # TODO: update Google Cloud project id
   GAR_LOCATION: 'us-central1' # TODO: update Artifact Registry location
-  SERVICE: 'streamlit-dashboard-repo' # TODO: update Cloud Run service name
-  IMAGE_NAME: 'streamlit-dashboard-image' # TODO: update Cloud Run service name
+  SERVICE: 'streamlit-dashboard-repo' 
+  IMAGE_NAME: 'streamlit-dashboard-image' 
+  STREAMLIT_DASHBOARD_NAME: 'nhl-dashboard-cr' 
+  
   REGION: 'us-central1' # TODO: update Cloud Run service region
-  TF_CHDIR: 'terraform' # TODO: update Cloud Run service region
+  TF_CHDIR: 'terraform' 
 
 jobs:
   terraform:
@@ -132,7 +134,7 @@ jobs:
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v0
         with:
-          service: ${{ env.SERVICE }}
+          service: ${{ env.STREAMLIT_DASHBOARD_NAME }}
           region: ${{ env.REGION }}
           # NOTE: If using a pre-built image, update the image name here
           image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
