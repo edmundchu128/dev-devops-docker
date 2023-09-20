@@ -90,6 +90,7 @@ jobs:
 
 
   deploy:
+    needs: terraform
     # Add 'id-token' with the intended permissions for workload identity federation
     permissions:
       contents: 'read'
