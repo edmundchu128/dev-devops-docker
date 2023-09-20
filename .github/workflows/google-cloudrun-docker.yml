@@ -79,12 +79,12 @@ jobs:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 
     - name: Terraform Plan
-      run: terraform -chdir=${{env.TF_CHDIR}} plan -out=tfplan
+      run: terraform -chdir=${{env.TF_CHDIR}} plan 
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
     
     - name: Terraform Apply
-      run: terraform -chdir=${{env.TF_CHDIR}} apply "tfplan"
+      run: terraform -chdir=${{env.TF_CHDIR}} apply -auto-approve
       env:
         GOOGLE_CREDENTIALS: ${{secrets.WIF_GCP_SA_KEY}}
 
