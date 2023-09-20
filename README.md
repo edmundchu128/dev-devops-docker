@@ -18,5 +18,9 @@ Technologies that are to be experimented on:
 Next phase:
 - Kafka
 
-2. deploy Docker images manually onto GCP Compute Engine
+2. deploy Docker images manually onto GCP Cloud run
 3. Automated deployment with GitHub Actions
+See lab_book/terraform-trial-001.md and .github/workflows/google-cloudrun-docker.yml for entire solution
+    - Tested up and running at https://nhl-dashboard-cr-leogdd42mq-uc.a.run.app
+    - Fully automated CI/CD for dashboard
+    
